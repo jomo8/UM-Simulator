@@ -25,29 +25,29 @@ uint32_t construct_word(FILE *fp);
 
 int main(int argc, char *argv[]) 
 {
-    if (argc != 2) {
-        fprintf(stderr, "Usage: ./um <Um file>\n");
-        return EXIT_FAILURE;
-    }
+        if (argc != 2) {
+                fprintf(stderr, "Usage: ./um <Um file>\n");
+                return EXIT_FAILURE;
+        }
 
-    FILE *fp = fopen(argv[1], "r");
-    assert(fp != NULL);
+        FILE *fp = fopen(argv[1], "r");
+        assert(fp != NULL);
 
-    struct stat file_info;
-    stat(argv[1], &file_info);
-    uint32_t size = file_info.st_size / CHAR_PER_WORD;
+        struct stat file_info;
+        stat(argv[1], &file_info);
+        uint32_t size = file_info.st_size / CHAR_PER_WORD;
 
-    UM_T um = um_new(size);
-    assert(um != NULL);
+        UM_T um = um_new(size);
+        assert(um != NULL);
 
-    populate_seg_zero(um, fp, size);
+        populate_seg_zero(um, fp, size);
 
-    fclose(fp);
-    um_execute(um);
+        fclose(fp);
+        um_execute(um);
 
-    um_free(&um);
+        um_free(&um);
 
-    return EXIT_SUCCESS;
+        return EXIT_SUCCESS;
 }
 
 /* Name: populate_seg_zero
@@ -59,14 +59,14 @@ int main(int argc, char *argv[])
  */
 void populate_seg_zero(UM_T um, FILE *fp, uint32_t size)
 {
-    assert(um != NULL);
-    assert(fp != NULL);
+        assert(um != NULL);
+        assert(fp != NULL);
 
-    for (uint32_t index = 0; index < size; ++index) {
-        uint32_t word = construct_word(fp);
+        for (uint32_t index = 0; index < size; ++index) {
+                uint32_t word = construct_word(fp);
 
-        populate(um, index, word);
-    }
+                populate(um, index, word);
+        }
 }
 
 /* Name: construct_word
@@ -78,19 +78,19 @@ void populate_seg_zero(UM_T um, FILE *fp, uint32_t size)
  */
 uint32_t construct_word(FILE *fp)
 {
-    assert(fp != NULL);
+        assert(fp != NULL);
 
-    uint32_t c = 0, word = 0;
-    int bytes = W_SIZE / CHAR_SIZE;
+        uint32_t c = 0, word = 0;
+        int bytes = W_SIZE / CHAR_SIZE;
 
-    /* Reads in a char and creates word in big endian order */
-    for (int c_loop = 0; c_loop < bytes; c_loop++) {
-        c = getc(fp);
-        assert(!feof(fp));
+        /* Reads in a char and creates word in big endian order */
+        for (int c_loop = 0; c_loop < bytes; c_loop++) {
+                c = getc(fp);
+                assert(!feof(fp));
 
-        unsigned lsb = W_SIZE - (CHAR_SIZE * c_loop) - CHAR_SIZE;
-        word = Bitpack_newu(word, CHAR_SIZE, lsb, c);
-    }
+                unsigned lsb = W_SIZE - (CHAR_SIZE * c_loop) - CHAR_SIZE;
+                word = Bitpack_newu(word, CHAR_SIZE, lsb, c);
+        }
 
-    return word;
+        return word;
 }
