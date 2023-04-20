@@ -101,36 +101,40 @@ void um_execute(UM_T um)
     /* Execute words in segment zero until there are none left */
     while (prog_counter < seg_zero_len) {
         word = *(uint32_t *)UArray_at(seg_zero, prog_counter);
-        opcode = Bitpack_getu(word, OP_WIDTH, WORD_SIZE - OP_WIDTH);
+        opcode = (word >> (WORD_SIZE - OP_WIDTH)) & ((1 << OP_WIDTH) - 1);
         prog_counter++;
 
-        /* Load value */
-        if (opcode == 13) {
-            uint32_t value_size = WORD_SIZE - OP_WIDTH - R_WIDTH;
-            ra = Bitpack_getu(word, R_WIDTH, value_size);
-            uint32_t value = Bitpack_getu(word, value_size, 0);
-            load_value(um, ra, value);
-            continue;
-        } 
+        ra = (word >> RA_LSB) & ((1 << R_WIDTH) - 1);
+        rb = (word >> RB_LSB) & ((1 << R_WIDTH) - 1);
+        rc = (word >> RC_LSB) & ((1 << R_WIDTH) - 1);
 
-        ra = Bitpack_getu(word, R_WIDTH, RA_LSB);
-        rb = Bitpack_getu(word, R_WIDTH, RB_LSB);
-        rc = Bitpack_getu(word, R_WIDTH, RC_LSB);
+        switch (opcode) {
+            case 12: /* Load Program */
+                /* Updates programs counter */
+                prog_counter = load_program(um, ra, rb, rc);
 
-        /* Load Program */
-        if (opcode == 12) {
-            /* Updates programs counter*/
-            prog_counter = load_program(um, ra, rb, rc);
+                seg_zero = (UArray_T)Seq_get(um->mem->segments, 0);
+                assert(seg_zero != NULL);
 
-            seg_zero = (UArray_T)Seq_get(um->mem->segments, 0);
-            assert(seg_zero != NULL);
+                seg_zero_len = UArray_length(seg_zero);
+                break;
 
-            seg_zero_len = UArray_length(seg_zero);
-        } else {
-            instruction_call(um, opcode, ra, rb, rc);
+            case 13: /* Load value */
+                {
+                    uint32_t value_size = WORD_SIZE - OP_WIDTH - R_WIDTH;
+                    ra = (word >> value_size) & ((1 << R_WIDTH) - 1);
+                    uint32_t value = word & ((1 << value_size) - 1);
+                    load_value(um, ra, value);
+                }
+                break;
+
+            default: /* All other opcodes */
+                instruction_call(um, opcode, ra, rb, rc);
+                break;
         }
     }
 }
+
 
 /* Name: instruction_call
  * Input: UM_T struct of the um
