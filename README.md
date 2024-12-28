@@ -1,4 +1,6 @@
-# miniature-dollop
+# UM-Emulator
+Creates a Universal Machine emulator. Using qcachegrind, I optimized bottlenecks in the code to improve scalability. 
+
 *This code is after fixing the um_execute function*
 
 Things I updated within um.c: 
